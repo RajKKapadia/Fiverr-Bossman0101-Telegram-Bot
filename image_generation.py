@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
 from bot_states import WAITING_FOR_IMAGE_PROMPT
-import config
+from utils import call_scenario_api
 
 
 async def image_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -30,15 +30,11 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE, pro
     await update.message.reply_text(f"Generating image for prompt: {prompt}")
 
     try:
-        response = config.openai_client.images.generate(
-            model="dall-e-3",
-            prompt=prompt,
-            n=1,
-            size="1024x1024"
-        )
-
-        # Send the generated image
-        image_url = response.data[0].url
-        await update.message.reply_photo(image_url)
+        data = call_scenario_api(prompt=prompt)
+        if data.get("status", False):
+            for url in data.get("urls", []):
+                await update.message.reply_photo(url)
+        else:
+            await update.message.reply_text(f"We are unable to generate an image at this moment, please try after sometime.")
     except Exception as e:
         await update.message.reply_text(f"We are unable to generate an image at this moment, please try after sometime.")
