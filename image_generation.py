@@ -33,6 +33,7 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE, pro
         data = call_scenario_api(prompt=prompt)
         if data.get("status", False):
             for url in data.get("urls", []):
+                await update.message.reply_text(url)
                 await update.message.reply_photo(url)
         else:
             await update.message.reply_text(f"We are unable to generate an image at this moment, please try after sometime.")
