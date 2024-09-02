@@ -1,7 +1,8 @@
 import time
 import requests
 import base64
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Tuple
+import json
 
 import config
 
@@ -19,10 +20,24 @@ headers = {
 }
 
 
-def extract_image_urls(inference_data: dict[str, any]) -> List[str]:
+def extract_image_urls(inference_data: dict[str, any]) -> Tuple[List[str], List[str]]:
     images = inference_data.get('inference', {}).get('images', [])
-    urls = [image.get('url') for image in images if 'url' in image]
-    return urls
+    urls = []
+    image_ids = []
+    for image in images:
+        urls.append(image["url"])
+        image_ids.append(image["id"])
+    return urls, image_ids
+
+
+def remove_background(image_id: str) -> str:
+    url = f"{base_url}/generate/remove-background"
+    payload = {"image": image_id,
+               "backgroundColor": "#ffffff"}
+    response = requests.post(url, json=payload, headers=headers)
+    response = dict(json.loads(response.text))
+    url = response.get("asset", {}).get("url", "")
+    return url
 
 
 def call_scenario_api(prompt: str) -> Dict[str, Any]:
@@ -30,12 +45,13 @@ def call_scenario_api(prompt: str) -> Dict[str, Any]:
         url=f'{base_url}/generate/txt2img',
         json={
             'modelId': model_id,
-            'prompt': prompt,
+            'prompt': prompt + "image must have transparent background",
             'numInferenceSteps': 30,
             'numSamples': 2,
             'guidance': 7.5,
             'width': 1024,
-            'height': 1024
+            'height': 1024,
+            "originalAssets": True
         },
         headers=headers
     )
@@ -50,7 +66,11 @@ def call_scenario_api(prompt: str) -> Dict[str, Any]:
             status = inference_data['inference']['status']
             time.sleep(5)
         if status == 'succeeded':
-            urls = extract_image_urls(inference_data=inference_data)
+            _, image_ids = extract_image_urls(inference_data=inference_data)
+            urls = []
+            for image_id in image_ids:
+                url = remove_background(image_id=image_id)
+                urls.append(url)
             return {
                 "status": True,
                 "urls": urls
