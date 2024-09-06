@@ -1,11 +1,11 @@
 import logging
-import os
 
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes, ConversationHandler, MessageHandler, filters
 
 from bot_states import WAITING_FOR_IMAGE_PROMPT
 from image_generation import image_command, receive_prompt
+import config
 
 
 # Enable logging
@@ -30,8 +30,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 def main() -> None:
     """Start the bot."""
     # Create the Application and pass it your bot's token
-    application = Application.builder().token(
-        os.getenv("TELEGRAM_BOT_API_KEY")).build()
+    application = Application.builder().token(config.TELEGRAM_BOT_API_KEY).build()
 
     # Add command handlers
     application.add_handler(CommandHandler("start", start))
