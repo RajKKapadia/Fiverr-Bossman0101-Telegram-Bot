@@ -1,8 +1,8 @@
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 
 from bot_states import WAITING_FOR_IMAGE_PROMPT
-from utils import call_scenario_api
+from utils import call_meshy_api
 
 
 async def image_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -28,13 +28,11 @@ async def receive_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE, prompt: str) -> None:
     """Generate an image using OpenAI API."""
     await update.message.reply_text(f"Generating image for prompt: {prompt}")
-
     try:
-        data = call_scenario_api(prompt=prompt)
-        if data.get("status", False):
-            for url in data.get("urls", []):
-                await update.message.reply_text(url)
-                await update.message.reply_photo(url)
+        url, video_url, _, status = call_meshy_api(prompt=prompt)
+        if status:
+            await update.message.reply_photo(url[0])
+            await update.message.reply_video(video_url[0])
         else:
             await update.message.reply_text(f"We are unable to generate an image at this moment, please try after sometime.")
     except Exception as e:
