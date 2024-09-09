@@ -51,12 +51,12 @@ def retriev_meshy_job_by_id(task_id: str) -> tuple[list[str], list[str], list[st
                 model_urls.append(response["model_urls"])
                 flag = False
                 status = True
-            elif count >= 30:
+            elif count >= 60:
                 flag = False
                 status = False
             else:
                 count += 1
-        time.sleep(3)
+        time.sleep(1)
     return url, video_url, model_urls, status
 
 
