@@ -1,9 +1,11 @@
+import asyncio
+
 import requests
-import time
 
 import config
 
-def get_meshy_job_id(prompt: str) -> str:
+
+async def get_meshy_job_id(prompt: str) -> str:
     try:
         payload = {
             "mode": "preview",
@@ -26,13 +28,12 @@ def get_meshy_job_id(prompt: str) -> str:
         return ""
 
 
-def retriev_meshy_job_by_id(task_id: str) -> tuple[list[str], list[str], list[str], bool]:
+async def retriev_meshy_job_by_id(task_id: str) -> tuple[list[str], list[str], list[str], bool]:
     headers = {
         "Authorization": f"Bearer {config.MESHY_API_KEY}"
     }
     flag = True
     status = False
-    count = 0
     url = []
     video_url = []
     model_urls = []
@@ -44,31 +45,27 @@ def retriev_meshy_job_by_id(task_id: str) -> tuple[list[str], list[str], list[st
         response.raise_for_status()
         if response.status_code == 200:
             response = response.json()
-            print(response)
             if response["status"] == "SUCCEEDED":
                 url.append(response["thumbnail_url"])
                 video_url.append(response["video_url"])
                 model_urls.append(response["model_urls"])
                 flag = False
                 status = True
-            elif count >= 60:
+            if response["status"] == "FAILED":
                 flag = False
-                status = False
-            else:
-                count += 1
-        time.sleep(1)
+                status = True
+        asyncio.sleep(1)
     return url, video_url, model_urls, status
 
 
-def call_meshy_api(prompt: str) -> tuple[list[str], list[str], list[str], bool]:
-    task_id = get_meshy_job_id(prompt=prompt)
-    print(task_id)
+async def call_meshy_api(prompt: str) -> tuple[list[str], list[str], list[str], bool]:
+    task_id = await get_meshy_job_id(prompt=prompt)
     url = []
     video_url = []
     model_urls = []
     if task_id == "":
         return url, video_url, model_urls, False
     else:
-        url, video_url, model_urls, status = retriev_meshy_job_by_id(
+        url, video_url, model_urls, status = await retriev_meshy_job_by_id(
             task_id=task_id)
         return url, video_url, model_urls, status
