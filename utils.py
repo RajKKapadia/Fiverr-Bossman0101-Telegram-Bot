@@ -54,7 +54,7 @@ async def retriev_meshy_job_by_id(task_id: str) -> tuple[list[str], list[str], l
             if response["status"] == "FAILED":
                 flag = False
                 status = True
-        asyncio.sleep(1)
+        await asyncio.sleep(1)
     return url, video_url, model_urls, status
 
 
